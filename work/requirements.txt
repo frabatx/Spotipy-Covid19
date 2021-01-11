@@ -1,0 +1,10 @@
+psycopg2-binary
+redis
+bokeh
+plotly
+chart_studio
+numpy
+scipy
+python-dotenv
+pandas
+spotipy

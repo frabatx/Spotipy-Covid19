@@ -17,6 +17,7 @@ Utilizzo il comando docker pull per scaricare in locale le immagini dei containe
 docker pull jupyter/all-spark-notebook:latest
 docker pull postgres:12-alpine
 docker pull adminer:latest
+docker pull redis:alpine
 ```
 
 
@@ -78,6 +79,19 @@ services:
     deploy:
      restart_policy:
        condition: on-failure
+  redis:
+    image: redis:alpine
+    environment:
+      # ALLOW_EMPTY_PASSWORD is recommended only for development.
+      - ALLOW_EMPTY_PASSWORD=yes
+      - REDIS_DISABLE_COMMANDS=FLUSHDB,FLUSHALL
+    ports:
+      - '6379:6379/tcp'
+    networks:
+      - demo-net
+    volumes:
+      - $HOME/data/redis:/var/lib/redis
+      - $PWD/redis.conf:/usr/local/etc/redis/redis.conf
   # pgadmin:
   #   image: dpage/pgadmin4:latest
   #   environment:
@@ -90,14 +104,143 @@ services:
   #   deploy:
   #     restart_policy:
   #       condition: on-failure
+
 ```
 
-Per il momento mancano alcune cose ma il codice verrá aggiornato.
+
 
 Il comando per eseguire la build dell'infrastruttura é: 
 
 ```
 docker stack deploy -c stack.yml jupyter
 ```
+
+Dove jupyter é il nome dello stack che abbiamo creato dal file stack.yml
+
+Qursto crea un network di container che interagiscono tra loro.
+
+Per controllare che sia andato a buon fine  é necessario fare un check dei container con il comando 
+
+```
+docker stack ps jupyter
+```
+
+Per poter accedere all'interfaccia di jupyter é necessario controllare i log del container a cui vogliamo accedere, nel nostro caso il nome del container é jupyter_spark (nome stack + _ + nome container) con il comando log
+
+```
+docker logs $(docker ps | grep jupyter_spark | awk '{print $NF}')
+```
+
+Se é andato tutto bene ed il container é online allora é possibile avere un tocken di accesso simile al seguente: 
+
+```
+http://127.0.0.1:8888/?token=f78cbe...
+```
+
+## Struttura cartelle
+
+Ora la cartella a cui si ha accesso é quella specificata nel file stack.yml, la cartella /work che fará da ponte tra il container e i file in locale.
+
+Questa cartella sará permanente ed ogni modifica fatta ai file verrá salvata anche in locale, anche al riavvio dello stack.
+
+É importante tenerlo a mente perché i dati all'interno del container sono volatili, allo spegnimento questi vengono cancellati, tranne quelli presenti, nel nostro caso nella  cartella work.
+
+Questa working-directory é settata alla riga 14 del file yml e ripresa alla riga 27. Nella riga 14 si fa riferimento alla working directory di jupyter, nella riga 27 si fa riferimento alla cartella utilizzata per lo storage, nel nostro caso sempre la stessa.
+
+Un'altra cartella importante é la cartella data. Infatti prima di inizializzare il progetto sará necessario creare questa cartella in locale nella posizione indicata dal comando 
+
+```
+mkdir -p ~/data/postgres
+mkdir -p ~/data/redis
+```
+
+##  Bootstrap environment
+
+Nel progetto é incluso un bootstrap script. Lo script ha lo scopo di:  
+
+* aggiornare l'ambiente
+* installare htop per la verifica delle performance (non utilissimo)
+* installare tutti i pacchetti elencati in requirements.txt attraverso pip
+* scaricare l'ultimo driver di postgres (o in caso utilizzare quello inserito nella cartella work)
+* impostare a worning il livello dei log di spark submit all'interno del container
+
+questo script si fa partire all'interno del container. Per farlo ci sono due modi. Inizializzare su jupyter un terminale o entrare fisicamente nel container e sfruttare il terminale. Quest'ultimo si fa in questo modo:
+
+```
+docker exec -it <containername> /bin/bash
+```
+
+una volta all'interno si dovrá inizializzare il comando per far partire il bootstrap script
+
+```
+sh bootstrap_jupyter.sh
+```
+
+o in alternativa fare tutto dall'esterno con un solo comando che permette di lanciare un comando da eseguire all'interno di un container dall'ambiente esterno.
+
+```
+docker exec -it <containername> sh bootstrap_jupyter.sh
+```
+
+## Runnare script
+
+Per poter runnare script all'interno dell'ambiente é necessario scrivere uno script python e da terminale interno al container lanciare il comando
+
+```
+python3 NOMEFILE.py
+```
+
+## Submit spark job
+
+ Non siamo limitati ai notebook per interagire con spark, infatti in ambiente di produzione quasi sempre si fa riferimento a script per fare analisi o performare ETL script su grandi database.
+
+Tipicamente piuttosto che lanciare lo script come fatto sopra si vuole interagire con esso attraverso il comando spark-submit, tipicamente utilizzato per poterlo lanciare in uno spark cluster.
+
+```
+$SPARK_HOME/bin/spark-submit 02_pyspark_job.py
+```
+
+immaginando che ci sia un file output creato per contenere il risultato dell'operazione potremmo visualizazrlo a schermo cosí
+
+```
+ls -alh output/items-sold.csv/
+head -5 output/items-sold.csv/*.csv
+```
+
+## Interagire con il DB
+
+ci sono due db all'interno di questa architettura. Uno implementato postgres, un'altro redis.
+
+Redis verrá utilizzato come Data Lake. Questo tipo di DB utilizza kv ed é estremamente versatile. 
+
+Si accede al server con il comando
+
+```
+docker exec -it nomecontainer redis-cli
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 IDEA POTREI CREARE UN DOCKER CON REDIS ED UNO CON POSTGRES PER POTER UTILIZZARE IL PRIMO PER DB E IL SECONDO COME DWH
