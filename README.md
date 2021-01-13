@@ -219,7 +219,13 @@ Si accede al server con il comando
 docker exec -it nomecontainer redis-cli
 ```
 
+In python é importante settare come redis_host il nome del container 'jupyter_host' ore 2 del mattino.
 
+
+
+# Progetto
+
+Il progetto ha come scopo il costruire un Big Data System che permette di analizzare dati di playlist di spotify. Nello specifico viene chiesto di analizzare le canzoni facenti parte delle playlist che abbiamo come oggetto il coronavirus, evidenziando differenze tra i vari paesi europei, analizzando lo 'spirit of the song' considerando valori come l'energy e la valence tra gli attributi dati dall'api di spotify.
 
 
 
