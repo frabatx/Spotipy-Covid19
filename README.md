@@ -254,6 +254,8 @@ Pipeline
 
 #TODO gestire redis e gli aggiornamenti. Lanciare un file che runna in backup che aggiorna la lista nel caso di aggiornamenti.
 
+#TODO gestire i database in pgAdmin, cercare di automatizzare la creazione dei server tramite json.
+
 
 
 Detto questo abbiamo due database a cui dobbiamo connetterci ed interagire. La prima cosa da fare é scaricare le informazioni che ci servono sul data lake. Un esempio di output che ricaviamo dall'api é il seguente:
