@@ -209,23 +209,50 @@ head -5 output/items-sold.csv/*.csv
 
 ## Interagire con il DB
 
-ci sono due db all'interno di questa architettura. Uno implementato postgres, un'altro redis.
+I database all'interno di questa applicazione sono 4. 
 
-Redis verrá utilizzato come Data Lake. Questo tipo di DB utilizza kv ed é estremamente versatile. 
+* Postgres
+* Postgres_backup
+* Postgres_dwh
+* Redis
 
-Si accede al server con il comando
+Il primo *Postgres* ci serve come primo db, al suo interno vengono salvati i dati originali presi direttamente dall'app. 
 
-```
-docker exec -it nomecontainer redis-cli
-```
+Il secondo *Postgres_backup* é il db di backup, questo viene preso in considerazione quando cade o fallisce il primo database.
 
-In python é importante settare come redis_host il nome del container 'jupyter_host' e non utilizzare il localhost. Il motivo é che il localhost si riferisce al container su cui sto runnando il codice. Nel nostro caso invece il redis-server a cui vogliamo accedere é sulla nostra stessa rete di container ma al di fuori del container di riferimento. ore 2 del mattino.
+Il terzo *Postgres_dwh* é il datawarehouse che contiene i dati dopo aver attuato le operazioni di ETL con spark.
+
+L'ultimo, *Redis*  é utilizzato per l'aggiornamento del database iniziale. Al suo interno sono salvati gli id delle playlist che abbiamo nel nostro db. Uno dei file che utilizzeremo sará un demon che andrá a fare richieste all'api una volta ogni ora. Se gli id sono presenti in Redis allora non c'é bisogno di aggiornare niente. Se la playlist é nuova allora aggiorna il db originale, ricalcola le ETL, aggiorna il DWH.
 
 
 
 # Progetto
 
-Il progetto ha come scopo il costruire un Big Data System che permette di analizzare dati di playlist di spotify. Nello specifico viene chiesto di analizzare le canzoni facenti parte delle playlist che abbiamo come oggetto il coronavirus, evidenziando differenze tra i vari paesi europei, analizzando lo 'spirit of the song' considerando valori come l'energy e la valence tra gli attributi dati dall'api di spotify.
+Il progetto ha come scopo il costruire un Big Data System che permette di analizzare dati di playlist di spotify. Nello specifico viene chiesto di analizzare le canzoni facenti parte delle playlist che abbiamo come oggetto il coronavirus, evidenziando differenze tra i vari paesi europei, analizzando lo 'spirit of the song' considerando valori come l'energy e la valence tra gli attributi dati dall'api di spotify. I dati verranno analizzati nell'ottica di una time series per vedere com'é mutato il mood musicale durante i lockdown.
+
+
+
+### Workflow
+
+* Caricamento dati. O si caricano da api o si caricano da backup
+* Sui dati dal db si applicano le operazioni di ETL e si copiano i dati in DWH
+* Dashboard prende i dati da DWH e li presenta
+
+
+
+File da lanciare:
+
+* create_tables.py  -> questa permette di creare le tabelle nei database (se stiamo provando la prima volta)
+* load_data_api.py / load_data_backup.py -> carica sul database principale tutte le ricerche 
+* backup.py -> dalla tabella di postgres copia i dati in un file csv e poi li copia sul db di backup.
+* etl_processing.py (load data in dwh)
+* visualization.py
+
+Pipeline
+
+* create_tables |load_data_api/load_data_backup(redis inizializzato) | backup | etl_processing | visualization
+
+#TODO gestire redis e gli aggiornamenti. Lanciare un file che runna in backup che aggiorna la lista nel caso di aggiornamenti.
 
 
 
@@ -322,100 +349,7 @@ L'oggetto che ricaviamo ha al suo interno l'oggetto tracks che contiene una prop
     "track":{
         "album":{},
         "artists":[],
-        "available_markets":[
-            "AD",
-            "AE",
-            "AL",
-            "AR",
-            "AT",
-            "AU",
-            "BA",
-            "BE",
-            "BG",
-            "BH",
-            "BO",
-            "BR",
-            "BY",
-            "CA",
-            "CH",
-            "CL",
-            "CO",
-            "CR",
-            "CY",
-            "CZ",
-            "DE",
-            "DK",
-            "DO",
-            "DZ",
-            "EC",
-            "EE",
-            "EG",
-            "ES",
-            "FI",
-            "FR",
-            "GB",
-            "GR",
-            "GT",
-            "HK",
-            "HN",
-            "HR",
-            "HU",
-            "ID",
-            "IE",
-            "IL",
-            "IN",
-            "IS",
-            "IT",
-            "JO",
-            "JP",
-            "KW",
-            "KZ",
-            "LB",
-            "LI",
-            "LT",
-            "LU",
-            "LV",
-            "MA",
-            "MC",
-            "MD",
-            "ME",
-            "MK",
-            "MT",
-            "MX",
-            "MY",
-            "NI",
-            "NL",
-            "NO",
-            "NZ",
-            "OM",
-            "PA",
-            "PE",
-            "PH",
-            "PL",
-            "PS",
-            "PT",
-            "PY",
-            "QA",
-            "RO",
-            "RS",
-            "RU",
-            "SA",
-            "SE",
-            "SG",
-            "SI",
-            "SK",
-            "SV",
-            "TH",
-            "TN",
-            "TR",
-            "TW",
-            "UA",
-            "US",
-            "UY",
-            "VN",
-            "XK",
-            "ZA"
-        ],
+        "available_markets":["AD","AE",..],
         "disc_number":1,
         "duration_ms":205547,
         "episode":false,
@@ -466,26 +400,6 @@ L'oggetto restituito é una lista di oggetti con le seguenti informazioni
 
 
 
-L'oggetto che ne viene fuori alla fine sará del tipo
-
-```json
-[
-    // Lista di oggetti semplici con playlist_id come chiave
-    {'playlist_id':'iddellaplaylist',
-     'tracks':[{'avaiable_markets': 'IT,EN,...',
-               'track_id': 'iddellatrack'
-               },
-               {.},
-               {.}
-              	]
-    },
-    {.},
-    {.}
-]
-```
-
-
-
 ### Load_in_redis.py
 
 Questo file fa quello spiegato sopra. Carica i file dall'API al container redis. I file non sono ancora completi e mancano delle audio features. Il programma viene runnato con il comando: 
@@ -494,20 +408,120 @@ Questo file fa quello spiegato sopra. Carica i file dall'API al container redis.
 python3 load_in_redis.py
 ```
 
-Fatto questo Redis avrá all'incirca 1900 chiavi con l'oggetto sopra indicato come valore. Prossimo file prende i dati da redis, li aggiorna e li carica su postgres.
+Fatto questo Redis avrá all'incirca 1900 chiavi con l'oggetto sopra indicato come valore.  Il codice commentato é quello che segue:
+
+```python
+#!/usr/bin/python3
+
+import spotipy
+from spotipy.oauth2 import SpotifyClientCredentials
+import redis
+import json
+
+
+def main():
+    """
+    The function takes care of uploading part of the data involved by the API to the container used as a data lake. 
+    The container manages a version of redis-server that allows you to save the downloaded playlists in key-value. 
+    For convenience the keys are ids ranging from 1 to the maximum number of playlists found (approximately 1930).
+    Structure of dictionary saved in redis:
+    {
+        playlist_id: "145qfqq4f4q44514qfq" 
+        tracks:[
+            {
+                track_id: "rl3q2nf1342534t"
+                available_market: "AL, IT, ...."
+            },
+        .
+        .
+        ]
+    }
+    """
+    
+    # Spotify settings
+    sp = spotipy.Spotify(client_credentials_manager=SpotifyClientCredentials(
+        client_id='118aa19f2b66476fbc062f0ac146d8b5',
+        client_secret='7ca95a3159ab4391bee70f70d47a9271'
+    ))
+
+    # Redis settings
+    REDIS_HOST = "jupyter_redis"
+    REDIS_PORT = 6379
+    REDIS = redis.Redis(host=REDIS_HOST, port=REDIS_PORT)
+
+    # Load data if Redis is connected
+    if(REDIS.ping()):
+        print("1/5 - Connected to the redis-server at {}:{}".format(REDIS_HOST,REDIS_PORT))
+        # Spotify data
+        search_results = []
+        playlists = sp.search(q='covid', type='playlist', limit=50,offset=0)['playlists']
+
+        print('2/5 - Load Playlists from search query')
+        # Load Playlists from search query
+        while playlists:
+            try:
+                for i, playlist in enumerate(playlists['items']):
+                    search_results.append(playlist)
+                    print("%4d %s %s" % (i + 1 + playlists['offset'], playlist['uri'],  playlist['name']))
+                if playlists['next']:
+                    playlists = sp.next(playlists)['playlists']
+                else:
+                    playlists = None
+            except Exception as e:
+                playlists = None
+                print('Done')
+
+        print('3/5 - Load tracks id and available_market')
+        # Load tracks id and available_market
+        final_informations = []
+        for i,playlist in enumerate(search_results):
+            try:
+                tracks = sp.playlist(playlist['uri'])['tracks']['items']
+                track_information = []
+                for track in tracks:
+                    track_information.append({
+                        "track_id": track['track']['id'],
+                        "available_markets" : ','.join(track['track']['available_markets']),
+                    })
+                final_informations.append({
+                    "playlist_id": playlist['id'],
+                    "tracks": json.dumps(track_information)
+                })
+                print('Done {} of {}'.format(i, len(search_results)))
+            except Exception as e:
+                print('Problem {} \n at item {} of {}'.format(e, i, len(search_results)))
+
+        print("4/5 - Load data from python to redis-server")
+        # Load data from python to redis-server
+        for i,playlist in enumerate(final_informations):
+            REDIS.set(str(i),json.dumps(playlist))
+        print("5/5 - Keys confirmed: {} on {}".format(len(REDIS.keys("*")), len(final_informations)
+
+    else:
+        print("Not connected to the redis-server at {}:{}".format(REDIS_HOST,REDIS_PORT))
+
+        
+if __name__ == "__main__":
+    main()        
+
+```
 
 
 
 ### Load_in_postgres
 
-File che permette di completare il lavoro con le api e di salvare tutti i dati in postgres.
-
-I dati rappresentano le qualitá di una sola canzone.
+Prossimo file prende i dati da redis, li aggiorna e li carica su postgres. File che permette di completare il lavoro con le api e di salvare tutti i dati in postgres. I dati rappresentano le qualitá di una sola canzone.
 
 ```
 python3 load_in_postgres.py
 ```
 
-
+Postgres ha una libreria per python che permette di gestire le connessioni. L'oggetto principale é il cursor. Il cursor altro sarebbe che un puntatore che permette di interagire con la tabella. Ne esistono di due tipi. Il client-side cursor carica l'intera tabella sul client e poi inizia a processarlo. Il lerver-side cursor non carica tutto sul client, a meno che non gli sia richiesto. Questo permette di gestire meglio la pesantezza dei dati anche se chiede al db un ingente numero di connessioni in piú.
 
 IDEA POTREI CREARE UN DOCKER CON REDIS ED UNO CON POSTGRES PER POTER UTILIZZARE IL PRIMO PER DB E IL SECONDO COME DWH
+
+
+
+## References
+
+* https://spotipy.readthedocs.io/en/2.16.1/#features

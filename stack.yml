@@ -31,7 +31,7 @@ services:
     environment:
       POSTGRES_USERNAME: postgres
       POSTGRES_PASSWORD: postgres1234
-      POSTGRES_DB: bakery
+      POSTGRES_DB: postgres
     ports:
     - "5432:5432/tcp"
     networks:
@@ -41,15 +41,45 @@ services:
     deploy:
      restart_policy:
        condition: on-failure
-  adminer:
-    image: adminer:latest
+  postgres_backup:
+    image: postgres:12-alpine
+    environment:
+      POSTGRES_USERNAME: postgres
+      POSTGRES_PASSWORD: postgres1234
+      POSTGRES_DB: postgres
     ports:
-    - "8080:8080/tcp"
+    - "5431:5431/tcp"
     networks:
     - demo-net
+    volumes:
+    - $HOME/data/postgres_backup:/var/lib/postgresql/data
     deploy:
      restart_policy:
        condition: on-failure
+  postgres_dwh:
+    image: postgres:12-alpine
+    environment:
+      POSTGRES_USERNAME: postgres
+      POSTGRES_PASSWORD: postgres1234
+      POSTGRES_DB: dati_finali
+    ports:
+    - "5430:5430/tcp"
+    networks:
+    - demo-net
+    volumes:
+    - $HOME/data/postgres_dwh:/var/lib/postgresql/data
+    deploy:
+     restart_policy:
+       condition: on-failure
+  # adminer:
+  #   image: adminer:latest
+  #   ports:
+  #   - "8080:8080/tcp"
+  #   networks:
+  #   - demo-net
+  #   deploy:
+  #    restart_policy:
+  #      condition: on-failure
   redis:
     image: redis:alpine
     environment:
@@ -62,15 +92,19 @@ services:
     volumes:
       - $HOME/data/redis:/var/lib/redis
       #- $PWD/redis.conf:/usr/local/etc/redis/redis.conf
-  # pgadmin:
-  #   image: dpage/pgadmin4:latest
-  #   environment:
-  #     PGADMIN_DEFAULT_EMAIL: user@domain.com
-  #     PGADMIN_DEFAULT_PASSWORD: 5up3rS3cr3t!
-  #   ports:
-  #     - "8180:80/tcp"
-  #   networks:
-  #     - demo-net
-  #   deploy:
-  #     restart_policy:
-  #       condition: on-failure
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    depends_on:
+      - postgres
+      - postgres_backup
+      - postgres_dwh
+    environment:
+      PGADMIN_DEFAULT_EMAIL: user@domain.com
+      PGADMIN_DEFAULT_PASSWORD: 5up3rS3cr3t!
+    ports:
+      - "8180:80/tcp"
+    networks:
+      - demo-net
+    deploy:
+      restart_policy:
+        condition: on-failure
