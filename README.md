@@ -250,7 +250,7 @@ File da lanciare:
 
 Pipeline
 
-* create_tables |load_data_api/load_data_backup(redis inizializzato) | backup | etl_processing | visualization
+* create_tables |load_data_api/load_data_backup(redis inizializzato) | backup | cronjob_update(lancia update) | etl_processing | visualization
 
 #TODO gestire redis e gli aggiornamenti. Lanciare un file che runna in backup che aggiorna la lista nel caso di aggiornamenti.
 
@@ -520,9 +520,32 @@ python3 load_in_postgres.py
 
 Postgres ha una libreria per python che permette di gestire le connessioni. L'oggetto principale é il cursor. Il cursor altro sarebbe che un puntatore che permette di interagire con la tabella. Ne esistono di due tipi. Il client-side cursor carica l'intera tabella sul client e poi inizia a processarlo. Il lerver-side cursor non carica tutto sul client, a meno che non gli sia richiesto. Questo permette di gestire meglio la pesantezza dei dati anche se chiede al db un ingente numero di connessioni in piú.
 
-IDEA POTREI CREARE UN DOCKER CON REDIS ED UNO CON POSTGRES PER POTER UTILIZZARE IL PRIMO PER DB E IL SECONDO COME DWH
+# databases
 
+Una volta lanciata la nostra applicazione bisogna importare le impostazioni server all'interno di pgAdmin il nostro gestore per DB. Dalla folder dove si trova il file stack lanciare i seguenti comandi per configurarlo.
 
+```
+docker cp servers.json [nomedelcontainerpgadmin]:/tmp/servers.json
+docker exec -it [nomedelcontainerpgadmin] python /pgadmin4/setup.py --load-servers /tmp/servers.json
+```
+
+per esportare i config relativi a i database invece basta runnare il seguente
+
+```
+docker exec -it [nomedelcontainerpgadmin] python /pgadmin4/setup.py --dump-servers /tmp/servers.json
+docker cp [nomedelcontainerpgadmin]:/tmp/servers.json .
+```
+
+una volta entrati al suo interno con l'url 127.0.0.1:8180
+
+basterá inserire username e password: 
+
+```
+PGADMIN_DEFAULT_EMAIL: user@domain.com
+PGADMIN_DEFAULT_PASSWORD: 5up3rS3cr3t!
+```
+
+ed inserire per ogni server la password: postgres1234
 
 ## References
 
