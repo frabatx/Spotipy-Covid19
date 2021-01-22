@@ -9,6 +9,7 @@ services:
     ports:
     - "8888:8888/tcp"
     - "4040:4040/tcp"
+    - "7777:7777/tcp"
     networks:
     - demo-net
     working_dir: /home/$USER/work

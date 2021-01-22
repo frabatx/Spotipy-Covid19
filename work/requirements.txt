@@ -8,3 +8,4 @@ scipy
 python-dotenv
 pandas
 spotipy
+dash

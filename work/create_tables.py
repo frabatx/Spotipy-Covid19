@@ -23,7 +23,7 @@ def main():
     cur = conn.cursor()
 
     # execute sql script
-    sql_file = open('create_tabel_postgres.sql', 'r')
+    sql_file = open('sql/create_tabel_postgres.sql', 'r')
     sqlFile = sql_file.read()
     sql_file.close()
     sqlCommands = sqlFile.split(';')
@@ -51,7 +51,7 @@ def main():
     cur2 = conn2.cursor()
 
     # execute sql script
-    sql_file = open('create_tabel_postgres.sql', 'r')
+    sql_file = open('sql/create_tabel_postgres.sql', 'r')
     sqlFile = sql_file.read()
     sql_file.close()
     sqlCommands = sqlFile.split(';')
@@ -71,7 +71,7 @@ def main():
     conn3 = psycopg2.connect(
         host = "postgres_dwh",
         port = "5432",
-        dbname = "dati_finali",
+        dbname = "postgres",
         user = "postgres",
         password = "postgres1234",
     )
@@ -79,7 +79,7 @@ def main():
     cur3 = conn3.cursor()
 
     # execute sql script
-    sql_file = open('create_tabel_dwh.sql', 'r')
+    sql_file = open('sql/create_tabel_dwh.sql', 'r')
     sqlFile = sql_file.read()
     sql_file.close()
     sqlCommands = sqlFile.split(';')

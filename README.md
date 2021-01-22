@@ -274,7 +274,7 @@ Detto questo abbiamo due database a cui dobbiamo connetterci ed interagire. La p
 }
 ```
 
-l'oggetto items contiene la lista di playlist ed é formato come segue:
+l'oggetto items contiene la lista di playlist ed é formato come seguech
 
 ```json
 {
@@ -526,7 +526,7 @@ Una volta lanciata la nostra applicazione bisogna importare le impostazioni serv
 
 ```
 docker cp servers.json [nomedelcontainerpgadmin]:/tmp/servers.json
-docker exec -it [nomedelcontainerpgadmin] python /pgadmin4/setup.py --load-servers /tmp/servers.json
+docker exec -it [nomedelcontainerpgadmin] python /pgadmin4/setup.py --load-servers /tmp/servers.json --user user@domain.com
 ```
 
 per esportare i config relativi a i database invece basta runnare il seguente
@@ -546,6 +546,18 @@ PGADMIN_DEFAULT_PASSWORD: 5up3rS3cr3t!
 ```
 
 ed inserire per ogni server la password: postgres1234
+
+# Per runnare la dash
+
+```
+docker service inspect --format="{{json .Endpoint.Spec.Ports}}" jupyter_spark
+```
+
+una volta lanciato il file visualization ci si connette al link di riferimento
+
+http://127.0.0.1:7777/
+
+
 
 ## References
 
