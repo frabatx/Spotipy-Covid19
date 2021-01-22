@@ -19,9 +19,11 @@ else
     wget -nv "https://jdbc.postgresql.org/download/${POSTGRES_JAR}"
 fi
 
+touch /var/log/mylog.log
 # Initialize cron with command every hour
-echo "0 * * * * cd /home/frabatx/work && python3 update.py " | crontab
+echo "0 * * * * cd /home/frabatx/work && python3 update.py > /var/log/mylog.log" | crontab
 sudo cron
+
 
 # spark-submit logging level from INFO to WARN
 sudo cp log4j.properties /usr/local/spark/conf/log4j.properties

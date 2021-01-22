@@ -59,7 +59,7 @@ def main():
     if REDIS.ping():
         # Load data into Redis
         print('- Load data into Redis')
-        for id_playlist in list(df.id_playlist):
+        for id_playlist in list(df['id_playlist']):
             REDIS.set(id_playlist, 1)
         print("- Confirmed playlist: {}".format(len(REDIS.keys("*"))))
     

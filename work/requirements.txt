@@ -9,3 +9,4 @@ python-dotenv
 pandas
 spotipy
 dash
+pyspark

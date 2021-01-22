@@ -10,8 +10,6 @@ def main():
     Se il file clean_data non esiste allora ne faccio uno dai dati creati sopra
     """
 
-
-
     # Check file entire_db
     if(not(os.path.exists('data/entire_db.csv'))):
         print('- File entire_db not exist. Creating it from postgres db')
