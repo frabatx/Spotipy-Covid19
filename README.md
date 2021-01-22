@@ -1,14 +1,14 @@
 # Covid19 analysis on Spotify
 
-Il progetto ha come scopo il costruire un Big Data System che permette di analizzare dati di playlist di spotify. Nello specifico viene chiesto di analizzare le canzoni facenti parte delle playlist che abbiano come oggetto il coronavirus, analizzando lo 'spirit of the song' considerando valori come l'energy e la valence tra gli attributi dati dall'api di spotify. I dati verranno analizzati nell'ottica di una time series per vedere com'é mutato il mood musicale durante i lockdown.
+The project aims to build a Big Data System that allows you to analyze Spotify playlist data. Specifically, it is asked to analyze the songs that are part of the playlists that have the coronavirus as their object, analyzing the 'spirit of the song' considering values such as energy and valence among the attributes given by the spotify api. The data will be analyzed in the perspective of a time series to see how the musical mood has changed during the lockdowns.
 
 # Demo
 
-La demo gira su un pc linux. Si da per certo una dimestichezza con l'ambiente docker.
+The demo runs on a Linux pc. You are certainly familiar with the Docker environment.
 
-Una volta scaricato il progetto é necessario inizializzare alcune variabili e cartelle.
+Once the project has been downloaded it is necessary to initialize some variables and folders.
 
-Si scaricano le immagini che servono:
+You download the images that you need:
 
 ```
 docker pull jupyter/all-spark-notebook:latest
@@ -17,7 +17,7 @@ docker pull redis:alpine
 docker pull dpage/pgadmin4:latest
 ```
 
-Si inizializzano le cartelle di sistema interessate:
+The affected system folders are initialized
 
 ```
 mkdir -p ~/data/postgres
@@ -26,19 +26,19 @@ mkdir -p ~/data/postgres_dwh
 mkdir -p ~/data/redis
 ```
 
-Dalla main folder del progetto lanciare il comando da terminale
+From the main folder of the project, launch the command from the terminal
 
 ```
 docker stack deploy -c stack.yml jupyter
 ```
 
-Controllare che sia stato buildato il progetto é possibile lanciare il comando:
+Check that the project has been built, you can run the command:
 
 ```
 docker stack ps jupyter
 ```
 
-Una volta lanciata la nostra applicazione bisogna importare le impostazioni server all'interno di pgAdmin il nostro gestore per DB. Dalla main folder lanciare i seguenti comandi per configurarlo.
+Once our application is launched, the server settings must be imported into pgAdmin, our DB manager. From the main folder run the following commands to configure it.
 
 ```
 docker cp servers.json [nomedelcontainerpgadmin]:/tmp/servers.json
@@ -46,55 +46,56 @@ docker cp servers.json [nomedelcontainerpgadmin]:/tmp/servers.json
 docker exec -it [nomedelcontainerpgadmin] python /pgadmin4/setup.py --load-servers /tmp/servers.json --user user@domain.com
 ```
 
-una volta entrati al suo interno con l'url 127.0.0.1:8180
+once inside it with the url 127.0.0.1:8180
 
-basterá inserire username e password: 
+just enter your username and password:
 
 ```
 EMAIL: user@domain.com
 PASSWORD: 5up3rS3cr3t!
 ```
 
-ed inserire per ogni server la password: postgres1234
+and enter the password for each server: postgres1234
 
-Entrare nel docker principale (spark)
+Enter the main docker (spark)
 
 ```
 docker exec -it <containername> /bin/bash
 ```
 
-Una volta dentro si fará il bootstrapping del docker, inizializzando tutte le librerie necessarie (vedesi il paragrafo dedicato sotto)
+Once inside the docker will be bootstrapped, initializing all the necessary libraries (see the dedicated paragraph below)
 
 ```
 sh bootstrap_jupyter.sh
 ```
 
-per avviare il progetto basta scrivere il comando
+to start the project just write the command
 
 ```
 sh load_data_backup.sh
 ```
 
-Si aspetta che finisca e saremo dentro la webapp all'indirizzo http://127.0.0.1:7777
+Expect it to finish and we will be inside the webapp at http://127.0.0.1:7777
 
-Nel caso si volesse far girare tutto l'algoritmo di caricamento dei dati direttamente da spotify si puó scrivere il comando
+If you want to run the whole data loading algorithm directly from spotify you can write the command
 
 ```
 sh loar_data_api.sh
 ```
 
-al posto di quello di sopra. Il caricamento richiede all'incirca 10 ore poiché carica circa 2000 playlists e 380mila tracce.
+instead of the one above. Uploading takes around 10 hours as it loads around 2000 playlists and 380,000 tracks.
 
 ## Docker
 
-In accordo con Docker la loro tecnologia permette gli sviluppatori di essere liberi di costruire, gestire e rendere sicure applicazioni senza preoccuparsi della infrastruttura dove sono installate. Per questo progetto sto utilizzando una versione di Docker Desktop per linux.
+According to Docker, their technology allows developers to be free to build, manage and secure applications without worrying about the infrastructure where they are installed. For this project we are using a version of Docker Desktop for linux.
 
-La versione corrente include orchestratori kubernetes e Swarm per gestire e deployare container. Ho scelto di utilizzare Swarm per questo progetto. Secondo docker il cluster management é innestato nel Docker Engine costruito utilizzando swarmkit. Swarmkit é un progetto separato che implementa un layer che orchestra Docker ed é utilizzato direttamente all'interno dello stesso.
+The current version includes kubernetes and Swarm orchestrators to manage and deploy containers. I have chosen to use Swarm for this project. According to Docker, cluster management is grafted into the Docker Engine built using Swarmkit. Swarmkit is a separate project that implements a layer that orchestrates Docker and is used directly within it.
 
-Per questo progetto Docker é perfetto per simulare un sistema scalabile orizzontalmente. Basta aggiungere un conteiner e collegarlo alla stessa rete per avere un elemento in piú da poter utilizzare. 
+For this project Docker is perfect for simulating a horizontally scalable system. Just add a container and connect it to the same network to have one more element to use.
 
-## Inizializzazione e comandi principali
-Utilizzo il comando docker pull per scaricare in locale le immagini dei container che serviranno per il progetto direttamente da Docker Hub. 
+
+## Initialization and main commands
+Use the Docker pull command to locally download the container images that will be needed for the project directly from Docker Hub. 
 
 ```bash
 docker pull jupyter/all-spark-notebook:latest
@@ -103,9 +104,9 @@ docker pull redis:alpine
 docker pull dpage/pgadmin4:latest
 ```
 
-Queste sono le immagini che andranno a comporre il cluster di container attraverso Docker Swarm. 
+These are the images that will make up the container cluster through Docker Swarm.
 
-Il file che contiene tutte le configurazioni e che permette di buildare l'intero cluster é il file stack.yml composto come segue: 
+The file that contains all the configurations and that allows you to build the entire cluster is the stack.yml file composed as follows:
 
 ```yaml
 # docker stack deploy -c stack.yml jupyter
@@ -214,13 +215,12 @@ services:
 
 
 
-## Struttura cartelle
+## Folder structure
 
-Ora la cartella a cui si ha accesso é quella specificata nel file stack.yml, la cartella /work che fará da ponte tra il container e i file in locale. Questa cartella sará permanente ed ogni modifica fatta ai file verrá salvata anche in locale, anche al riavvio dello stack.
-
+The folder you have access to is the one specified in the stack.yml file, the work/ folder that will bridge between the container and the local files. This folder will be permanent and any changes made to the files will also be saved locally, even when the stack is restarted.
 All'interno della cartella /work abbiamo la cartella /data e /sql.
 
-La prima contiene due file necessari a far avviare l'applicazione senza riscaricare le playlist dall'inizio. La seconda contiene i comandi sql che servono agli script per creare le tabelle da database. 
+The first contains two files needed to start the application without re-downloading the playlists from the beginning. The second contains the sql commands used by the scripts to create the tables from the database 
 
 ```
 mkdir -p ~/data/postgres
@@ -231,63 +231,64 @@ mkdir -p ~/data/redis
 
 ##  Running
 
-Direttamente dal main folder run from the terminal
+Directly from the main folder run from the terminal
 
 ```
 docker stack deploy -c stack.yml jupyter
 ```
 
-Dove jupyter é il nome dello stack che abbiamo creato dal file stack.yml
+Where jupyter is the name of the stack we created from the stack.yml file
 
-Qursto crea un network di container che interagiscono tra loro.
+To check that it was successful it is necessary to check the containers with the command
 
-Per controllare che sia andato a buon fine  é necessario fare un check dei container con il comando 
+
 
 ```
 docker stack ps jupyter
 ```
 
-Per poter accedere all'interfaccia di jupyter notebook é necessario controllare i log del container a cui vogliamo accedere, nel nostro caso il nome del container é jupyter_spark (nome stack + _ + nome container) con il comando log
+In order to access the jupyter notebook interface it is necessary to check the logs of the container we want to access, in our case the container name is jupyter_spark (stack name + _ + container name) with the log command
 
 ```
 docker logs $(docker ps | grep jupyter_spark | awk '{print $NF}')
 ```
 
-Se é andato tutto bene ed il container é online allora é possibile avere un tocken di accesso simile al seguente: 
+If everything went well and the container is online then it is possible to have an access tocken similar to the following:
 
 ```
 http://127.0.0.1:8888/?token=f78cbe...
 ```
 
-Fare questo ultimo passaggio peró non é necessario ai fini della demo 
+However, doing this last step is not necessary for the demo
 
-Fatto é possibile entrare all'interno del container principale (spark) per poter interagire con l'app.
+Done, it is possible to enter the main container (spark) in order to interact with the app.
 
-Il comando per entrare nella shell del container é:
+
+The command to enter the container shell is:
 
 ```
 docker exec -it <containername> /bin/bash
 ```
 
-Una volta entrati basterá runnare i seguenti comandi:
+Once entered, just run the following commands:
 
-1. Inizializzare l'ambiente
+1. Initialize the environment
 
 ```
 sh bootstrap_jupyter.sh
 ```
 
-2. Avviare l'applicazione che permetterá di avere la dashboard all'indirizzo 127.0.0.1:7777
+2. Start the application that will allow you to have the dashboard at 127.0.0.1:7777
 
-   il file load_data_backup permette di caricare in db playlist giá scaricate ed aggiornarle con un cronjob che viene avviato da bootstrap_jupyter. Questo per evitare il caricamento dei dati che, essendo tanti, arriva ad un tempo di caricamento che puó arrivare alle 10h. 
+   the load_data_backup file allows you to load already downloaded playlists in db and update them with a cronjob that is started by bootstrap_jupyter. This is to avoid the loading of the data which, being many, reaches a loading time that can reach 10h.
 
    ```
    sh load_data_backup.sh
    ```
 
-Sul terminale si potranno seguire le varie fasi del processo.
+The various stages of the process can be followed on the terminal.
 
-Se invece si vuole scaricare da api la pipeline da eseguire é 
+If, on the other hand, you want to download from api the pipeline to run is
 
 ```
 sh load_data_api.sh
@@ -295,49 +296,51 @@ sh load_data_api.sh
 
 
 
-##  Bootstrap e update
+##  Bootstrap and update
 
-Nel progetto é incluso un bootstrap script. Lo script ha lo scopo di:  
+A bootstrap script is included in the project. The script aims to:  
 
-* aggiornare l'ambiente
-* installare htop per la verifica delle performance (non utilissimo)
-* installare tutti i pacchetti elencati in requirements.txt attraverso pip
-* scaricare l'ultimo driver di postgres (o in caso utilizzare quello inserito nella cartella work)
-* impostare a worning il livello dei log di spark submit all'interno del container
-* lanciare un cronjob ogni ora per l'aggiornamento del db.
+* update the environment
+* install htop for performance verification (not very useful)
+* install all packages listed in requirements.txt through pip
+* download the latest postgres driver (or, if necessary, use the one inserted in the work folder)
+* iset to worning the level of spark submit logs inside the container
+* launch a cronjob every hour to update the db.
 
-Il cronjob ogni ora lancia il file update.py.
+The cronjob every hour launches the update.py file.
+This file downloads the playlist list updated every hour. Query Redis which has been initialized with the data present in the csv files. If the playlist is already present in Redis then it is ignored, if it is new, the db is updated. By updating the data that is displayed within the webapp.
 
-Questo file scarica la lista delle playlist aggiornata ogni ora. Interroga Redis che é stato inizializzato con i dati presenti nei file csv. Se la playlist é giá presente in Redis allora viene ignorata, se é nuova si fa un update al db. Aggiornando i dati che vengono visualizzati all'interno della webapp.
+This script runs inside the container.
 
-questo script si fa partire all'interno del container. 
+## Interact with the DB
 
-## Interagire con il DB
-
-I database all'interno di questa applicazione sono 4. 
+There are 4 databases within this application. 
 
 * Postgres
 * Postgres_backup
 * Postgres_dwh
 * Redis
 
-Il primo *Postgres* ci serve come primo db, al suo interno vengono salvati i dati originali presi direttamente da Spotify. 
+The first Postgres serves as the first db, the original data taken directly from Spotify are saved inside.
 
-Il secondo *Postgres_backup* é il db di backup, questo viene preso in considerazione quando cade o fallisce il primo database.
+The second Postgres_backup is the backup db, this is taken into account when the first database fails or fails.
 
-Il terzo *Postgres_dwh* é il datawarehouse che contiene i dati dopo aver attuato le operazioni di ETL con spark.
+The third Postgres_dwh is the data warehouse that contains the data after carrying out the ETL operations with spark.
 
-L'ultimo, *Redis*  é utilizzato per l'aggiornamento del database iniziale. Al suo interno sono salvati gli id delle playlist che abbiamo nel nostro db. Uno dei file che utilizzeremo sará un demon che andrá a fare richieste all'api una volta ogni ora. Se gli id sono presenti in Redis allora non c'é bisogno di aggiornare niente. Se la playlist é nuova allora aggiorna il db originale, ricalcola le ETL, aggiorna il DWH.
+
+The last one, Redis is used for the initial database update. Inside are saved the id of the playlists we have in our db. One of the files we will use will be a demon that will make requests to the API once an hour. If the ids are present in Redis then there is no need to update anything. If the playlist is new then update the original db, recalculate the ETLs, update the DWH.
 
 
 
 # Pipelines
 
-File lanciati all'interno dei file load_data.sh:
 
-* create_tables.py  -> questa permette di creare le tabelle nei database (se stiamo provando la prima volta)
-* load_data_api.py / load_data_backup.py -> carica sul database principale tutte le ricerche 
-* backup.py -> dalla tabella di postgres copia i dati in un file csv e poi li copia sul db di backup.
+Files launched inside load_data.sh files:
+
+
+* create_tables.py -> this allows you to create tables in databases (if we are trying for the first time)
+* load_data_api.py / load_data_backup.py -> loads all searches to the main database
+* backup.py -> the postgres table copy the data to a csv file and then copy them to the backup db.
 * etl.py (load data in dwh)
 * visualization.py
 
